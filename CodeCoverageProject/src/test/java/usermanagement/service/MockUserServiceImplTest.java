@@ -27,75 +27,108 @@ import usermanagement.repository.PersonRepository;
 @RunWith(MockitoJUnitRunner.class)
 public class MockUserServiceImplTest {
 
-	private static final String ALI = "Ali";
-	private static final String TEST_COMPANY = "Test";
-	private Person person = new Person();
-	@Mock
-	private PersonRepository personDao;
+    private static final String ALI = "Ali";
+    private static final String TEST_COMPANY = "Test";
+    private Person person = new Person();
+    @Mock
+    private PersonRepository personDao;
 
-	@InjectMocks
-	private UserServiceImpl testClass;
+    @InjectMocks
+    private UserServiceImpl testClass;
 
-	@Mock
-	private TransformService transformer;
+    @Mock
+    private TransformService transformer;
 
-	private User user = new User();
+    private User user = new User();
 
-	@Test
-	public void findById_found() {
-		doReturn(person).when(personDao).findOne(Integer.valueOf(1));
-		doReturn(user).when(transformer).toUserDomain(person);
+    @Test
+    public void findById_found() {
+        doReturn(person).when(personDao).findOne(Integer.valueOf(1));
+        doReturn(user).when(transformer).toUserDomain(person);
 
-		User user = testClass.findById(Integer.valueOf(1));
-		assertEquals(ALI, user.getFirstName());
-	}
+        User user = testClass.findById(Integer.valueOf(1));
+        assertEquals(ALI, user.getFirstName());
+    }
 
-	@Test 
-	public void findById_not_found_default_user() {
-		doReturn(null).when(personDao).findOne( Matchers.any(Integer.class));
-		 
-		doReturn(user).when(transformer).toUserDomain(Matchers.any(Person.class));
-		
-		User default_user = testClass.findById(Integer.valueOf(1));
-		assertNotNull(default_user);
-		 
-	}
+    @Test
+    public void findByIdOld_found() {
+        doReturn(person).when(personDao).findOne(Integer.valueOf(1));
+        doReturn(user).when(transformer).toUserDomain(person);
 
-	@Test
-	public void searchByCompanyName_found() {
-		List<Person> persons = new ArrayList<>();
-		persons.add(person);
-		doReturn(persons).when(personDao).findByCompany(TEST_COMPANY);
-		doReturn(user).when(transformer).toUserDomain(person);
+        User user = testClass.findById_old(Integer.valueOf(1));
+        assertEquals(ALI, user.getFirstName());
+    }
 
-		List<User> users = testClass.searchByCompanyName(TEST_COMPANY);
-		assertEquals(1, users.size());
-		assertEquals(ALI, users.get(0).getFirstName());
-	}
+    @Test(expected = UserNotFoundException.class)
+    public void findByIdOld_not_found_default_user() {
+        doReturn(null).when(personDao).findOne(Matchers.any(Integer.class));
 
-	@Test
-	public void searchByCompanyName_not_found() {
-		List<Person> persons = new ArrayList<>();
-		doReturn(persons).when(personDao).findByCompany(TEST_COMPANY);
-		doReturn(user).when(transformer).toUserDomain(person);
+        doReturn(user).when(transformer).toUserDomain(Matchers.any(Person.class));
 
-		List<User> users = testClass.searchByCompanyName(TEST_COMPANY);
-		assertTrue(users.isEmpty());
-	}
+        testClass.findById_old(Integer.valueOf(1));
 
-	@Test
-	public void deleteById_is_done_by_dao_delete() {
-		doNothing().when(personDao).delete(Matchers.any(Integer.class));
+    }
 
-		testClass.deleteById(Integer.valueOf(1));
+    @Test
+    public void findByIdOld_not_found_default_user_exception_catch() {
+        doReturn(null).when(personDao).findOne(Matchers.any(Integer.class));
 
-		verify(personDao, times(1)).delete(Integer.valueOf(1));
-		;
-	}
+        doReturn(user).when(transformer).toUserDomain(Matchers.any(Person.class));
 
-	@Before
-	public void setup() {
-		person.setfName(ALI);
-		user.setFirstName(ALI);
-	}
+        try {
+            User testUser = testClass.findById_old(Integer.valueOf(1));
+        } catch (UserNotFoundException e){
+            assertEquals(e.getUserId(), Integer.valueOf(1));
+        }
+
+    }
+
+    @Test
+    public void findById_not_found_default_user() {
+        doReturn(null).when(personDao).findOne(Matchers.any(Integer.class));
+
+        doReturn(user).when(transformer).toUserDomain(Matchers.any(Person.class));
+
+        User default_user = testClass.findById(Integer.valueOf(1));
+        assertNotNull(default_user);
+
+    }
+
+    @Test
+    public void searchByCompanyName_found() {
+        List<Person> persons = new ArrayList<>();
+        persons.add(person);
+        doReturn(persons).when(personDao).findByCompany(TEST_COMPANY);
+        doReturn(user).when(transformer).toUserDomain(person);
+
+        List<User> users = testClass.searchByCompanyName(TEST_COMPANY);
+        assertEquals(1, users.size());
+        assertEquals(ALI, users.get(0).getFirstName());
+    }
+
+    @Test
+    public void searchByCompanyName_not_found() {
+        List<Person> persons = new ArrayList<>();
+        doReturn(persons).when(personDao).findByCompany(TEST_COMPANY);
+        doReturn(user).when(transformer).toUserDomain(person);
+
+        List<User> users = testClass.searchByCompanyName(TEST_COMPANY);
+        assertTrue(users.isEmpty());
+    }
+
+    @Test
+    public void deleteById_is_done_by_dao_delete() {
+        doNothing().when(personDao).delete(Matchers.any(Integer.class));
+
+        testClass.deleteById(Integer.valueOf(1));
+
+        verify(personDao, times(1)).delete(Integer.valueOf(1));
+        ;
+    }
+
+    @Before
+    public void setup() {
+        person.setfName(ALI);
+        user.setFirstName(ALI);
+    }
 }
